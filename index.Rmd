@@ -1,0 +1,179 @@
+---
+title: "Panorama da vacinação contra COVID-19 nas Metrópoles e Região Metropolitanas"
+output: 
+  flexdashboard::flex_dashboard:
+    theme:
+      version: 4
+      bg: "#8B8378"
+      fg: "#000000" 
+      primary: "#ED79F9"
+      navbar-bg: "#FFFFFF"
+      base_font: 
+        google: Prompt
+      heading_font:
+        google: Sen
+      code_font:
+        google: 
+          # arguments to sass::font_google() 
+          family: JetBrains Mono
+          local: false
+    orientation: columns
+    vertical_layout: fill
+runtime: shiny
+
+---
+
+
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+library(sf)
+library(geobr)
+library(plotly)
+```
+
+
+``` {r, include=FALSE}
+
+# importa tabelas e bases espaciais ---------------------------------------------------------
+
+tabela_vacina <- read_csv("tabela_vacinacao_municipios.csv")
+
+
+muni_geo <- read_municipality(year = 2014)
+
+# une tabela de vanicao a base espacial
+muni_geo_vacina <- muni_geo |> 
+  left_join(tabela_vacina, by = c("code_muni"="id_municipio"))
+```
+
+Column { .sidebar}
+-----------------------------------------------------------------------------------------
+  
+```{r}
+selectInput(
+  inputId = "coluna",
+  label = "Escolha a RM",
+  choices = c("Belém",
+              "Belo Horizonte",
+              "Campina Grande",
+              "Campinas",
+              "Curitiba",
+              "Florianópolis",
+              "Fortaleza",
+              "Goiânia",
+              "Grande São Luís",
+              "Grande Vitória",
+              "Manaus",
+              "Maringá",
+              "Natal",
+              "Porto Alegre",
+              "Recife",
+              "RIDE Distrito Federal",
+              "Rio de Janeiro",
+              "Salvador",
+              "São Paulo")
+)
+```
+
+## Column {data-width=650}
+
+### **Primeira dose**
+
+```{r}
+
+
+renderPlotly({ggplotly(muni_geo_vacina |>
+                         filter(nome_rm == input$coluna) |> 
+                         mutate(per_1dose = round(per_1dose*100, 1)) |> 
+  ggplot() +
+  geom_sf(aes(fill = per_1dose)) +
+  scale_fill_viridis_c(name = "%", option = "E", direction = -1,
+                           limits=c(0,100)) +
+  theme_void() +
+  theme(plot.subtitle = element_text(size = 16),
+  legend.title = element_text(size = 12, face = "bold"),
+  legend.text = element_text(size = 10),
+  legend.position = "bottom"),
+  tooltip = c("text", "fill")
+)})
+
+
+
+```
+
+### **Segunda dose ou dose única**
+
+```{r}
+
+
+renderPlotly({ggplotly(muni_geo_vacina |>
+                         filter(nome_rm == input$coluna) |>
+                         mutate(per_imuni = round(per_imuni*100, 1)) |> 
+  ggplot() +
+  geom_sf(aes(fill = per_imuni)) +
+  scale_fill_viridis_c(name = "%", option = "E", direction = -1,
+                           limits=c(0,100)) +
+  theme_void() +
+  theme(plot.subtitle = element_text(size = 16),
+  legend.title = element_text(size = 12, face = "bold"),
+  legend.text = element_text(size = 10),
+  legend.position = "bottom"),
+  tooltip = c("text", "fill")
+)})
+
+
+
+```
+
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Percentual de Vacinados com a primeira dose Núcleo x Entorno
+
+```{r}
+
+renderPlot({tabela_vacina |> 
+  filter(nome_rm == input$coluna) |> 
+  group_by(nome_rm, territorio) |> 
+  summarise(primeira_dose = sum(primeira_dose),
+            segunda_dose = sum(segunda_dose ),
+            populacao = sum(populacao),
+            dose_unica = sum(dose_unica),
+            imune = sum(imune),
+            populacao = sum(populacao)) |> 
+  mutate(per_1dose = round((primeira_dose/populacao)*100, 1),
+         per_imuni = round((segunda_dose/populacao)*100, 1)) |> 
+  ggplot() +
+  aes(x = territorio, y = per_1dose) +
+  geom_bar(stat = "identity", fill = "darkred", alpha = 0.6) +
+    ylim(0,100) +
+    labs(x = " ", y = "percentual") +
+    theme_minimal()})
+
+```
+
+### Percentual de Vacinados com a segunda dose ou dose únic Núcleo x Entorno
+
+```{r}
+renderPlot({tabela_vacina |> 
+  filter(nome_rm == input$coluna) |> 
+  group_by(nome_rm, territorio) |> 
+  summarise(primeira_dose = sum(primeira_dose),
+            segunda_dose = sum(segunda_dose ),
+            populacao = sum(populacao),
+            dose_unica = sum(dose_unica),
+            imune = sum(imune),
+            populacao = sum(populacao)) |> 
+  mutate(per_1dose = round((primeira_dose/populacao)*100, 1),
+         per_imuni = round((segunda_dose/populacao)*100, 1)) |> 
+  ggplot() +
+  aes(x = territorio, y = per_imuni) +
+  geom_bar(stat = "identity", fill = "darkred", alpha = 0.6) +
+    ylim(0,100) +
+    labs(x = " ", y = "percentual") +
+    theme_minimal()})
+
+```
