@@ -1,12 +1,12 @@
 ---
-title: "Panorama da vacinação contra COVID-19 nas Metrópoles e Região Metropolitanas"
+title: "Panorama da vacinação contra COVID-19 nas Metrópoles e Região Metropolitanas |"
 output: 
   flexdashboard::flex_dashboard:
     theme:
       version: 4
-      bg: "#8B8378"
+      bg: "#CDC0B0"
       fg: "#000000" 
-      primary: "#ED79F9"
+      primary: "#CDC0B0"
       navbar-bg: "#FFFFFF"
       base_font: 
         google: Prompt
@@ -22,7 +22,6 @@ output:
 runtime: shiny
 
 ---
-
 
 
 ```{r setup, include=FALSE}
@@ -47,6 +46,8 @@ muni_geo <- read_municipality(year = 2014)
 muni_geo_vacina <- muni_geo |> 
   left_join(tabela_vacina, by = c("code_muni"="id_municipio"))
 ```
+
+# Vaciação nas metrópoles {data-icon="fa-chart-bar"}
 
 Column { .sidebar}
 -----------------------------------------------------------------------------------------
@@ -77,7 +78,7 @@ selectInput(
 )
 ```
 
-## Column {data-width=650}
+## Column {data-width=600}
 
 ### **Primeira dose**
 
@@ -128,8 +129,38 @@ renderPlotly({ggplotly(muni_geo_vacina |>
 ```
 
 
-Column {data-width=350}
+Column {data-width=400}
 -----------------------------------------------------------------------
+
+### vacinados com a primeira dose
+
+```{r}
+
+renderValueBox({
+  x <- tabela_vacina |> 
+  filter(nome_rm == input$coluna) |> 
+  group_by(nome_rm) |> 
+  summarise(primeira_dose = sum(primeira_dose))
+  
+  valueBox(x$primeira_dose, icon = "fa-syringe")})
+
+```
+
+### vacinados com a segunda dose ou dose única
+
+```{r}
+
+renderValueBox({
+  x <- tabela_vacina |> 
+  filter(nome_rm == input$coluna) |> 
+  group_by(nome_rm) |> 
+  summarise(imune = sum(imune))
+  
+  valueBox(x$imune, icon = "fa-syringe")})
+
+```
+
+```
 
 ### Percentual de Vacinados com a primeira dose Núcleo x Entorno
 
@@ -177,3 +208,11 @@ renderPlot({tabela_vacina |>
     theme_minimal()})
 
 ```
+
+
+
+
+
+
+
+
