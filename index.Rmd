@@ -1,27 +1,18 @@
 ---
-title: "Panorama da vacinação contra COVID-19 nas Metrópoles e Região Metropolitanas |"
+title: "Vacinação contra COVID-19 nas Metrópoles e Região Metropolitanas |"
 output: 
   flexdashboard::flex_dashboard:
-    theme:
-      version: 4
-      bg: "#CDC0B0"
-      fg: "#000000" 
-      primary: "#CDC0B0"
-      navbar-bg: "#FFFFFF"
-      base_font: 
-        google: Prompt
-      heading_font:
-        google: Sen
-      code_font:
-        google: 
-          # arguments to sass::font_google() 
-          family: JetBrains Mono
-          local: false
+    theme: lumen
     orientation: columns
     vertical_layout: fill
+
+
+
 runtime: shiny
 
 ---
+
+
 
 
 ```{r setup, include=FALSE}
@@ -47,10 +38,10 @@ muni_geo_vacina <- muni_geo |>
   left_join(tabela_vacina, by = c("code_muni"="id_municipio"))
 ```
 
-# Vaciação nas metrópoles {data-icon="fa-chart-bar"}
+# Panorama {data-icon="fa-chart-bar"}
 
-Column { .sidebar}
------------------------------------------------------------------------------------------
+## Column { .sidebar}
+
   
 ```{r}
 selectInput(
@@ -77,6 +68,7 @@ selectInput(
               "São Paulo")
 )
 ```
+
 
 ## Column {data-width=600}
 
@@ -129,24 +121,10 @@ renderPlotly({ggplotly(muni_geo_vacina |>
 ```
 
 
-Column {data-width=400}
------------------------------------------------------------------------
+## Column {data-width=200}
 
-### vacinados com a primeira dose
 
-```{r}
-
-renderValueBox({
-  x <- tabela_vacina |> 
-  filter(nome_rm == input$coluna) |> 
-  group_by(nome_rm) |> 
-  summarise(primeira_dose = sum(primeira_dose))
-  
-  valueBox(x$primeira_dose, icon = "fa-syringe")})
-
-```
-
-### vacinados com a segunda dose ou dose única
+### vacinados com a 1ª dose
 
 ```{r}
 
@@ -156,63 +134,642 @@ renderValueBox({
   group_by(nome_rm) |> 
   summarise(imune = sum(imune))
   
-  valueBox(x$imune, icon = "fa-syringe")})
+  valueBox(x$imune, icon = "fa-syringe", color = "#8B864E")})
+
 
 ```
 
+
+### Núcleo | vacinados com 1ª dose (%)
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == input$coluna & territorio == "Núcleo") |> 
+  group_by(nome_rm) |> 
+  summarise(primeira_dose = sum(primeira_dose),
+            populacao = sum(populacao)) |> 
+  mutate(per_1dose = round((primeira_dose/populacao)*100,1))
+
+gauge(y$per_1dose, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+
 ```
 
-### Percentual de Vacinados com a primeira dose Núcleo x Entorno
+### Núcleo | vacinados com 2ª dose ou única (%)
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == input$coluna & territorio == "Núcleo") |> 
+  group_by(nome_rm) |> 
+  summarise(imune = sum(imune),
+            populacao = sum(populacao)) |> 
+  mutate(per_imune = round((imune/populacao)*100,1))
+
+gauge(y$per_imune, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+
+## Column {data-width=200}
+
+### vacinados com 2ª dose ou única
 
 ```{r}
 
-renderPlot({tabela_vacina |> 
+renderValueBox({
+  x <- tabela_vacina |> 
   filter(nome_rm == input$coluna) |> 
-  group_by(nome_rm, territorio) |> 
-  summarise(primeira_dose = sum(primeira_dose),
-            segunda_dose = sum(segunda_dose ),
-            populacao = sum(populacao),
-            dose_unica = sum(dose_unica),
-            imune = sum(imune),
-            populacao = sum(populacao)) |> 
-  mutate(per_1dose = round((primeira_dose/populacao)*100, 1),
-         per_imuni = round((segunda_dose/populacao)*100, 1)) |> 
-  ggplot() +
-  aes(x = territorio, y = per_1dose) +
-  geom_bar(stat = "identity", fill = "darkred", alpha = 0.6) +
-    ylim(0,100) +
-    labs(x = " ", y = "percentual") +
-    theme_minimal()})
+  group_by(nome_rm) |> 
+  summarise(primeira_dose = sum(primeira_dose))
+  
+  valueBox(x$primeira_dose, icon = "fa-syringe", color = "#8B864E")})
 
 ```
 
-### Percentual de Vacinados com a segunda dose ou dose únic Núcleo x Entorno
+
+### Entorno | vacinados com 1ª dose (%)
 
 ```{r}
-renderPlot({tabela_vacina |> 
-  filter(nome_rm == input$coluna) |> 
-  group_by(nome_rm, territorio) |> 
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == input$coluna & territorio == "Entorno") |> 
+  group_by(nome_rm) |> 
   summarise(primeira_dose = sum(primeira_dose),
-            segunda_dose = sum(segunda_dose ),
-            populacao = sum(populacao),
-            dose_unica = sum(dose_unica),
-            imune = sum(imune),
             populacao = sum(populacao)) |> 
-  mutate(per_1dose = round((primeira_dose/populacao)*100, 1),
-         per_imuni = round((segunda_dose/populacao)*100, 1)) |> 
-  ggplot() +
-  aes(x = territorio, y = per_imuni) +
-  geom_bar(stat = "identity", fill = "darkred", alpha = 0.6) +
-    ylim(0,100) +
-    labs(x = " ", y = "percentual") +
-    theme_minimal()})
+  mutate(per_1dose = round((primeira_dose/populacao)*100,1))
 
+gauge(y$per_1dose, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
 ```
 
 
+### Entorno | vacinados com 2ª dose ou única (%)
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == input$coluna & territorio == "Entorno") |> 
+  group_by(nome_rm) |> 
+  summarise(imune = sum(imune),
+            populacao = sum(populacao)) |> 
+  mutate(per_imune = round((imune/populacao)*100,1))
+
+gauge(y$per_imune, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+# 1ª dose | {data-icon="fa-percentage"}
+
+## Column {data-width=143}
+
+### Belém 
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "Belém") |> 
+  group_by(nome_rm) |> 
+  summarise(primeira_dose = sum(primeira_dose),
+            populacao = sum(populacao)) |> 
+  mutate(per_1dose = round((primeira_dose/populacao)*100,1))
+
+gauge(y$per_1dose, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+### Goiânia
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "Goiânia") |> 
+  group_by(nome_rm) |> 
+  summarise(primeira_dose = sum(primeira_dose),
+            populacao = sum(populacao)) |> 
+  mutate(per_1dose = round((primeira_dose/populacao)*100,1))
+
+gauge(y$per_1dose, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+### Porto Alegre
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "Campina Grande") |> 
+  group_by(nome_rm) |> 
+  summarise(primeira_dose = sum(primeira_dose),
+            populacao = sum(populacao)) |> 
+  mutate(per_1dose = round((primeira_dose/populacao)*100,1))
+
+gauge(y$per_1dose, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+## Column {data-width=143}
+
+### Belo Horizonte
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "Belo Horizonte") |> 
+  group_by(nome_rm) |> 
+  summarise(primeira_dose = sum(primeira_dose),
+            populacao = sum(populacao)) |> 
+  mutate(per_1dose = round((primeira_dose/populacao)*100,1))
+
+gauge(y$per_1dose, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
 
 
+### Grande São Luís
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "Grande São Luís") |> 
+  group_by(nome_rm) |> 
+  summarise(primeira_dose = sum(primeira_dose),
+            populacao = sum(populacao)) |> 
+  mutate(per_1dose = round((primeira_dose/populacao)*100,1))
+
+gauge(y$per_1dose, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+### Recife
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "Recife") |> 
+  group_by(nome_rm) |> 
+  summarise(primeira_dose = sum(primeira_dose),
+            populacao = sum(populacao)) |> 
+  mutate(per_1dose = round((primeira_dose/populacao)*100,1))
+
+gauge(y$per_1dose, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+## Column {data-width=143}
+
+### Campina Grande
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "Campina Grande") |> 
+  group_by(nome_rm) |> 
+  summarise(primeira_dose = sum(primeira_dose),
+            populacao = sum(populacao)) |> 
+  mutate(per_1dose = round((primeira_dose/populacao)*100,1))
+
+gauge(y$per_1dose, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+### Grande Vitória
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "Grande Vitória") |> 
+  group_by(nome_rm) |> 
+  summarise(primeira_dose = sum(primeira_dose),
+            populacao = sum(populacao)) |> 
+  mutate(per_1dose = round((primeira_dose/populacao)*100,1))
+
+gauge(y$per_1dose, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+### RIDE Distrito Federal
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "RIDE Distrito Federal") |> 
+  group_by(nome_rm) |> 
+  summarise(primeira_dose = sum(primeira_dose),
+            populacao = sum(populacao)) |> 
+  mutate(per_1dose = round((primeira_dose/populacao)*100,1))
+
+gauge(y$per_1dose, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+## Column {data-width=143}
+
+### Campinas
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "Campinas") |> 
+  group_by(nome_rm) |> 
+  summarise(primeira_dose = sum(primeira_dose),
+            populacao = sum(populacao)) |> 
+  mutate(per_1dose = round((primeira_dose/populacao)*100,1))
+
+gauge(y$per_1dose, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
 
 
+### João Pessoa
 
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "Manaus") |> 
+  group_by(nome_rm) |> 
+  summarise(primeira_dose = sum(primeira_dose),
+            populacao = sum(populacao)) |> 
+  mutate(per_1dose = round((primeira_dose/populacao)*100,1))
+
+gauge(y$per_1dose, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+
+### Rio de Janeiro
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "Rio de Janeiro") |> 
+  group_by(nome_rm) |> 
+  summarise(primeira_dose = sum(primeira_dose),
+            populacao = sum(populacao)) |> 
+  mutate(per_1dose = round((primeira_dose/populacao)*100,1))
+
+gauge(y$per_1dose, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+## Column {data-width=143}
+
+### Curitiba
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "Curitiba") |> 
+  group_by(nome_rm) |> 
+  summarise(primeira_dose = sum(primeira_dose),
+            populacao = sum(populacao)) |> 
+  mutate(per_1dose = round((primeira_dose/populacao)*100,1))
+
+gauge(y$per_1dose, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+### Manaus
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "Manaus") |> 
+  group_by(nome_rm) |> 
+  summarise(primeira_dose = sum(primeira_dose),
+            populacao = sum(populacao)) |> 
+  mutate(per_1dose = round((primeira_dose/populacao)*100,1))
+
+gauge(y$per_1dose, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+### Salvador
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "Salvador") |> 
+  group_by(nome_rm) |> 
+  summarise(primeira_dose = sum(primeira_dose),
+            populacao = sum(populacao)) |> 
+  mutate(per_1dose = round((primeira_dose/populacao)*100,1))
+
+gauge(y$per_1dose, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+## Column {data-width=143}
+
+### Florianópolis
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "Florianópolis") |> 
+  group_by(nome_rm) |> 
+  summarise(primeira_dose = sum(primeira_dose),
+            populacao = sum(populacao)) |> 
+  mutate(per_1dose = round((primeira_dose/populacao)*100,1))
+
+gauge(y$per_1dose, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+### Maringá
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "Maringá") |> 
+  group_by(nome_rm) |> 
+  summarise(primeira_dose = sum(primeira_dose),
+            populacao = sum(populacao)) |> 
+  mutate(per_1dose = round((primeira_dose/populacao)*100,1))
+
+gauge(y$per_1dose, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+### São Paulo
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "São Paulo") |> 
+  group_by(nome_rm) |> 
+  summarise(primeira_dose = sum(primeira_dose),
+            populacao = sum(populacao)) |> 
+  mutate(per_1dose = round((primeira_dose/populacao)*100,1))
+
+gauge(y$per_1dose, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+## Column {data-width=143}
+
+### Fortaleza
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "Fortaleza") |> 
+  group_by(nome_rm) |> 
+  summarise(primeira_dose = sum(primeira_dose),
+            populacao = sum(populacao)) |> 
+  mutate(per_1dose = round((primeira_dose/populacao)*100,1))
+
+gauge(y$per_1dose, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+### Natal
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "Natal") |> 
+  group_by(nome_rm) |> 
+  summarise(primeira_dose = sum(primeira_dose),
+            populacao = sum(populacao)) |> 
+  mutate(per_1dose = round((primeira_dose/populacao)*100,1))
+
+gauge(y$per_1dose, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+# 2ª dose | {data-icon="fa-percentage"}
+
+## Column {data-width=143}
+
+### Belém 
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "Belém") |> 
+  group_by(nome_rm) |> 
+  summarise(imune = sum(imune),
+            populacao = sum(populacao)) |> 
+  mutate(per_imune = round((imune/populacao)*100,1))
+
+gauge(y$per_imune, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+### Goiânia
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "Goiânia") |> 
+  group_by(nome_rm) |> 
+  summarise(imune = sum(imune),
+            populacao = sum(populacao)) |> 
+  mutate(per_imune = round((imune/populacao)*100,1))
+
+gauge(y$per_imune, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+### Porto Alegre
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "Campina Grande") |> 
+  group_by(nome_rm) |> 
+  summarise(imune = sum(imune),
+            populacao = sum(populacao)) |> 
+  mutate(per_imune = round((imune/populacao)*100,1))
+
+gauge(y$per_imune, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+## Column {data-width=143}
+
+### Belo Horizonte
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "Belo Horizonte") |> 
+  group_by(nome_rm) |> 
+  summarise(imune = sum(imune),
+            populacao = sum(populacao)) |> 
+  mutate(per_imune = round((imune/populacao)*100,1))
+
+gauge(y$per_imune, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+
+### Grande São Luís
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "Grande São Luís") |> 
+  group_by(nome_rm) |> 
+  summarise(imune = sum(imune),
+            populacao = sum(populacao)) |> 
+  mutate(per_imune = round((imune/populacao)*100,1))
+
+gauge(y$per_imune, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+### Recife
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "Recife") |> 
+  group_by(nome_rm) |> 
+  summarise(imune = sum(imune),
+            populacao = sum(populacao)) |> 
+  mutate(per_imune = round((imune/populacao)*100,1))
+
+gauge(y$per_imune, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+## Column {data-width=143}
+
+### Campina Grande
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "Campina Grande") |> 
+  group_by(nome_rm) |> 
+  summarise(imune = sum(imune),
+            populacao = sum(populacao)) |> 
+  mutate(per_imune = round((imune/populacao)*100,1))
+
+gauge(y$per_imune, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+### Grande Vitória
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "Grande Vitória") |> 
+  group_by(nome_rm) |> 
+  summarise(imune = sum(imune),
+            populacao = sum(populacao)) |> 
+  mutate(per_imune = round((imune/populacao)*100,1))
+
+gauge(y$per_imune, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+### RIDE Distrito Federal
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "RIDE Distrito Federal") |> 
+  group_by(nome_rm) |> 
+  summarise(imune = sum(imune),
+            populacao = sum(populacao)) |> 
+  mutate(per_imune = round((imune/populacao)*100,1))
+
+gauge(y$per_imune, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+## Column {data-width=143}
+
+### Campinas
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "Campinas") |> 
+  group_by(nome_rm) |> 
+  summarise(imune = sum(imune),
+            populacao = sum(populacao)) |> 
+  mutate(per_imune = round((imune/populacao)*100,1))
+
+gauge(y$per_imune, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+
+### João Pessoa
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "Manaus") |> 
+  group_by(nome_rm) |> 
+  summarise(imune = sum(imune),
+            populacao = sum(populacao)) |> 
+  mutate(per_imune = round((imune/populacao)*100,1))
+
+gauge(y$per_imune, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+
+### Rio de Janeiro
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "Rio de Janeiro") |> 
+  group_by(nome_rm) |> 
+  summarise(imune = sum(imune),
+            populacao = sum(populacao)) |> 
+  mutate(per_imune = round((imune/populacao)*100,1))
+
+gauge(y$per_imune, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+## Column {data-width=143}
+
+### Curitiba
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "Curitiba") |> 
+  group_by(nome_rm) |> 
+  summarise(imune = sum(imune),
+            populacao = sum(populacao)) |> 
+  mutate(per_imune = round((imune/populacao)*100,1))
+
+gauge(y$per_imune, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+### Manaus
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "Manaus") |> 
+  group_by(nome_rm) |> 
+  summarise(imune = sum(imune),
+            populacao = sum(populacao)) |> 
+  mutate(per_imune = round((imune/populacao)*100,1))
+
+gauge(y$per_imune, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+### Salvador
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "Salvador") |> 
+  group_by(nome_rm) |> 
+  summarise(imune = sum(imune),
+            populacao = sum(populacao)) |> 
+  mutate(per_imune = round((imune/populacao)*100,1))
+
+gauge(y$per_imune, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+## Column {data-width=143}
+
+### Florianópolis
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "Florianópolis") |> 
+  group_by(nome_rm) |> 
+  summarise(imune = sum(imune),
+            populacao = sum(populacao)) |> 
+  mutate(per_imune = round((imune/populacao)*100,1))
+
+gauge(y$per_imune, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+### Maringá
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "Maringá") |> 
+  group_by(nome_rm) |> 
+  summarise(imune = sum(imune),
+            populacao = sum(populacao)) |> 
+  mutate(per_imune = round((imune/populacao)*100,1))
+
+gauge(y$per_imune, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+### São Paulo
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "São Paulo") |> 
+  group_by(nome_rm) |> 
+  summarise(imune = sum(imune),
+            populacao = sum(populacao)) |> 
+  mutate(per_imune = round((imune/populacao)*100,1))
+
+gauge(y$per_imune, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+## Column {data-width=143}
+
+### Fortaleza
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "Fortaleza") |> 
+  group_by(nome_rm) |> 
+  summarise(imune = sum(imune),
+            populacao = sum(populacao)) |> 
+  mutate(per_imune = round((imune/populacao)*100,1))
+
+gauge(y$per_imune, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+### Natal
+
+```{r}
+renderGauge({y <-  tabela_vacina |> 
+  filter(nome_rm == "Natal") |> 
+  group_by(nome_rm) |> 
+  summarise(imune = sum(imune),
+            populacao = sum(populacao)) |> 
+  mutate(per_imune = round((imune/populacao)*100,1))
+
+gauge(y$per_imune, min =0, max = 100, gaugeSectors(success = c(50, 100), warning = c(15,25), danger = c(0,10)))})
+```
+
+
+# Notas explicativas {data-icon="fa-circle"}
 
