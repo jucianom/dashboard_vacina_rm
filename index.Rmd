@@ -1,5 +1,5 @@
 ---
-title: "Vacinação contra COVID-19 nas Metrópoles e Região Metropolitanas |"
+title: "Vacinação contra COVID-19 nas Metrópoles e Regiões Metropolitanas |"
 output: 
   flexdashboard::flex_dashboard:
     theme: lumen
@@ -7,13 +7,9 @@ output:
     vertical_layout: fill
 
 
-
 runtime: shiny
 
 ---
-
-
-
 
 ```{r setup, include=FALSE}
 library(flexdashboard)
@@ -28,10 +24,11 @@ library(plotly)
 
 # importa tabelas e bases espaciais ---------------------------------------------------------
 
-tabela_vacina <- read_csv("tabela_vacinacao_municipios.csv")
+tabela_vacina <- read_csv("tabela_vacinacao_municipios.csv") |> 
+  filter(nome != "Petrópolis")
 
 
-muni_geo <- read_municipality(year = 2014)
+muni_geo <- st_read("municipios.shp")
 
 # une tabela de vanicao a base espacial
 muni_geo_vacina <- muni_geo |> 
@@ -57,6 +54,7 @@ selectInput(
               "Goiânia",
               "Grande São Luís",
               "Grande Vitória",
+              "João Pessoa",
               "Manaus",
               "Maringá",
               "Natal",
@@ -67,8 +65,21 @@ selectInput(
               "Salvador",
               "São Paulo")
 )
+
+
 ```
 
+###
+
+- Seleciona acima a metrópole ou região metropolitana de interesse
+
+\newline
+
+- Passando o cursor sobre os mapas é possível ver o percentual de vacinação em cada município.
+
+\newline
+
+- Clicando nas abas ao lado do título é possível comparar a cobertura vacinal nas metrópoles regiões metropolitanas selecionadas
 
 ## Column {data-width=600}
 
@@ -80,17 +91,17 @@ selectInput(
 renderPlotly({ggplotly(muni_geo_vacina |>
                          filter(nome_rm == input$coluna) |> 
                          mutate(per_1dose = round(per_1dose*100, 1)) |> 
+                         rename(Percentual = per_1dose) |> 
   ggplot() +
-  geom_sf(aes(fill = per_1dose)) +
+  geom_sf(aes(fill = Percentual, text = nome)) +
   scale_fill_viridis_c(name = "%", option = "E", direction = -1,
                            limits=c(0,100)) +
   theme_void() +
   theme(plot.subtitle = element_text(size = 16),
   legend.title = element_text(size = 12, face = "bold"),
   legend.text = element_text(size = 10),
-  legend.position = "bottom"),
-  tooltip = c("text", "fill")
-)})
+  legend.position = "bottom")
+  )})
 
 
 
@@ -132,9 +143,9 @@ renderValueBox({
   x <- tabela_vacina |> 
   filter(nome_rm == input$coluna) |> 
   group_by(nome_rm) |> 
-  summarise(imune = sum(imune))
+  summarise(primeira_dose = sum(primeira_dose))
   
-  valueBox(x$imune, icon = "fa-syringe", color = "#8B864E")})
+  valueBox(x$primeira_dose, icon = "fa-syringe", color = "#8B864E")})
 
 
 ```
@@ -178,9 +189,9 @@ renderValueBox({
   x <- tabela_vacina |> 
   filter(nome_rm == input$coluna) |> 
   group_by(nome_rm) |> 
-  summarise(primeira_dose = sum(primeira_dose))
+  summarise(imune = sum(imune))
   
-  valueBox(x$primeira_dose, icon = "fa-syringe", color = "#8B864E")})
+  valueBox(x$imune, icon = "fa-syringe", color = "#8B864E")})
 
 ```
 
@@ -358,7 +369,7 @@ gauge(y$per_1dose, min =0, max = 100, gaugeSectors(success = c(50, 100), warning
 
 ```{r}
 renderGauge({y <-  tabela_vacina |> 
-  filter(nome_rm == "Manaus") |> 
+  filter(nome_rm == "João Pessoa") |> 
   group_by(nome_rm) |> 
   summarise(primeira_dose = sum(primeira_dose),
             populacao = sum(populacao)) |> 
@@ -637,7 +648,7 @@ gauge(y$per_imune, min =0, max = 100, gaugeSectors(success = c(50, 100), warning
 
 ```{r}
 renderGauge({y <-  tabela_vacina |> 
-  filter(nome_rm == "Manaus") |> 
+  filter(nome_rm == "João Pessoa") |> 
   group_by(nome_rm) |> 
   summarise(imune = sum(imune),
             populacao = sum(populacao)) |> 
@@ -772,4 +783,20 @@ gauge(y$per_imune, min =0, max = 100, gaugeSectors(success = c(50, 100), warning
 
 
 # Notas explicativas {data-icon="fa-circle"}
+
+###
+
+Este dashboard foi desenvolvido pelo Núcleo Rio de Janeiro como parte do Dossiê Covid-19 elaborado por pesquisadores da Rede Nacional do Observatório das Metrópoles (https://www.observatoriodasmetropoles.net.br/).
+
+\newline
+
+Os gráficos e mapas foram elaborados com informações dos Microdados da Campanha Nacional de Vacinação contra COVID-19 do Ministério da Saúde, tratados pela iniciativa Base dos Dados (https://basedosdados.org/) e disponibilizados através de seu datalake público na plataforma Google Cloud. Os dados espaciais que permitiram a elaboração dos mapas foram obtidas através do pacote geobr(https://cran.r-project.org/web/packages/geobr/vignettes/intro_to_geobr.html). O dashboar foi construído através da Linguagem R (https://www.r-project.org/). 
+
+\newline
+
+Essa ferramenta de visualização é uma iniciativa desenvolvida também no âmbito do OM.Lab, Programa de formação em método e técnicas de pesquisa do INCT Observatório das Metrópoles, e do Metrodata,  projeto de sistematização, disponibilização e visualização de dados do INCT Observatório das Metrópoles. A organização dos dados e o desenvolvimento do painel é de responsabilidade do pesquisador Juciano Rodrigues, do Núcleo Rio.
+
+\newline
+
+Dúvidas e sugestões podem ser encaminhadas para o email om.lab@observatoriodasmetropoles.net
 
