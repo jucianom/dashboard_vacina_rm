@@ -1,0 +1,13 @@
+name: vacina_rm
+title: vacina_rm
+username:
+account: metrodata
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 4616349
+bundleId: 5013737
+url: https://metrodata.shinyapps.io/vacina_rm/
+when: 1631141252.70305
+lastSyncTime: 1631141252.70305
+asMultiple: FALSE
+asStatic: FALSE

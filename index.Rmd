@@ -28,7 +28,8 @@ tabela_vacina <- read_csv("tabela_vacinacao_municipios.csv") |>
   filter(nome != "Petrópolis")
 
 
-muni_geo <- st_read("municipios.shp")
+#muni_geo <- st_read("municipios.shp")
+muni_geo <- read_municipality(year = 2014)
 
 # une tabela de vanicao a base espacial
 muni_geo_vacina <- muni_geo |> 
@@ -71,7 +72,7 @@ selectInput(
 
 ###
 
-- Seleciona acima a metrópole ou região metropolitana de interesse
+- Selecione acima a metrópole ou região metropolitana de interesse
 
 \newline
 
@@ -79,9 +80,9 @@ selectInput(
 
 \newline
 
-- Clicando nas abas ao lado do título é possível comparar a cobertura vacinal nas metrópoles regiões metropolitanas selecionadas
+- Clicando nas abas ao lado do título é possível comparar a cobertura vacinal nas metrópoles e regiões metropolitanas selecionadas
 
-## Column {data-width=600}
+## Column {data-width=500}
 
 ### **Primeira dose**
 
@@ -99,8 +100,7 @@ renderPlotly({ggplotly(muni_geo_vacina |>
   theme_void() +
   theme(plot.subtitle = element_text(size = 16),
   legend.title = element_text(size = 12, face = "bold"),
-  legend.text = element_text(size = 10),
-  legend.position = "bottom")
+  legend.text = element_text(size = 10))
   )})
 
 
@@ -114,17 +114,16 @@ renderPlotly({ggplotly(muni_geo_vacina |>
 
 renderPlotly({ggplotly(muni_geo_vacina |>
                          filter(nome_rm == input$coluna) |>
-                         mutate(per_imuni = round(per_imuni*100, 1)) |> 
+                         mutate(per_imuni = round(per_imuni*100, 1)) |>
+                         rename(Percentual = per_imuni) |>
   ggplot() +
-  geom_sf(aes(fill = per_imuni)) +
+  geom_sf(aes(fill = Percentual, text = nome)) +
   scale_fill_viridis_c(name = "%", option = "E", direction = -1,
                            limits=c(0,100)) +
   theme_void() +
   theme(plot.subtitle = element_text(size = 16),
   legend.title = element_text(size = 12, face = "bold"),
-  legend.text = element_text(size = 10),
-  legend.position = "bottom"),
-  tooltip = c("text", "fill")
+  legend.text = element_text(size = 10))
 )})
 
 
@@ -132,7 +131,7 @@ renderPlotly({ggplotly(muni_geo_vacina |>
 ```
 
 
-## Column {data-width=200}
+## Column {data-width=250}
 
 
 ### vacinados com a 1ª dose
@@ -179,7 +178,7 @@ gauge(y$per_imune, min =0, max = 100, gaugeSectors(success = c(50, 100), warning
 ```
 
 
-## Column {data-width=200}
+## Column {data-width=250}
 
 ### vacinados com 2ª dose ou única
 
