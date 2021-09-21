@@ -9,4 +9,4 @@ Essa ferramenta de visualização é uma iniciativa desenvolvida também no âmb
 
 Dúvidas e sugestões podem ser encaminhadas para o email om.lab@observatoriodasmetropoles.net
 
-- Dados processados até 18 de setembro de 2021
+
